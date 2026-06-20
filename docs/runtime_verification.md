@@ -637,9 +637,25 @@ map -> base_link translation [2.039, -0.061, 0.010]
 yaw 11.905 degrees
 ```
 
+The manual headless run is now covered by a repeatable host-side smoke:
+
+```bash
+PATH=/private/tmp/apple-container-src/bin:$PATH ./scripts/check_nav2_loopback.sh
+```
+
+The script passed against the live container:
+
+```text
+OK: Nav2 lifecycle nodes reached active.
+OK: /scan produced a sample.
+OK: NavigateToPose succeeded.
+Goal finished with status: SUCCEEDED
+Translation: [2.065, -0.080, 0.010]
+```
+
 ## Next Safe Step
 
-The next simulator step is deciding whether Nav2 stays as an optional live-container install or gets baked into the image. Keep it optional if the base image should stay focused on ROS desktop, RDP, rosbridge, Zenoh, and transport tooling; bake it in if repeatable navigation simulation matters more than image size and rebuild time.
+Keep Nav2 optional for the next slice. Bake it into the image only when repeatable navigation simulation matters more than image size and rebuild time.
 
 The signed installer should still not be installed until local package signature validation succeeds. For now, use the source-built CLI path above, or complete Apple-documented source installation interactively with `sudo`, then rerun:
 

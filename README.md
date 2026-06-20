@@ -106,6 +106,12 @@ ros2 run turtlesim turtlesim_node
 
 For navigation work, install simulator packages only after the base runtime is healthy. The minimal TurtleBot/Gazebo bridge and full Nav2 loopback path have been verified in the live container. The optional path is documented in `docs/simulation_navigation.md`.
 
+After installing the optional Nav2 packages, run the repeatable loopback smoke:
+
+```bash
+./scripts/check_nav2_loopback.sh
+```
+
 ## ROS Networking
 
 The default container uses CycloneDDS:
@@ -148,6 +154,7 @@ Recommended transport direction:
 - `scripts/build_container.sh`: builds `ros2-mac-container:latest`.
 - `scripts/start_container.sh`: runs the container and publishes RDP/network ports.
 - `scripts/check_runtime_networking.sh`: verifies the running container, published ports, rosbridge, Zenoh, and ROS doctor.
+- `scripts/check_nav2_loopback.sh`: verifies optional Nav2 loopback lifecycle, `/scan`, `NavigateToPose`, and final TF.
 - `scripts/check_rosbridge_websocket.py`: publishes and receives a ROS `std_msgs/String` through rosbridge.
 - `scripts/attach_container.sh`: opens a shell as the `ros` user.
 - `scripts/stop_container.sh`: stops the running container.

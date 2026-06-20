@@ -136,6 +136,12 @@ sudo apt-get install -y \
   ros-jazzy-turtlebot3-navigation2
 ```
 
+Or let the host-side smoke script install the same optional package set into the running container:
+
+```bash
+INSTALL_NAV2=1 ./scripts/check_nav2_loopback.sh
+```
+
 For a headless lifecycle, planning, and closed-loop motion smoke, start with the Nav2 loopback simulation:
 
 ```bash
@@ -174,6 +180,7 @@ ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
 
 Current verification status:
 
+- `./scripts/check_nav2_loopback.sh` repeats the headless proof from the Mac host.
 - Lifecycle activation works after publishing `/initialpose`.
 - `/navigate_to_pose` accepts goals.
 - `/plan` is published.
@@ -193,4 +200,11 @@ RDP/RViz visual proof has also been captured:
 
 ## When To Bake It Into The Image
 
-Only add these packages to the Dockerfile when you want Nav2 available in every image build. Baking them in will make the base image larger and rebuilds slower, so the default image stays focused on ROS desktop, RDP, rosbridge, Zenoh, and transport tooling.
+Keep Nav2 optional for now. The base image should stay focused on ROS desktop, RDP, rosbridge, Zenoh, and transport tooling while navigation simulation remains an add-on workflow.
+
+Bake the package set into the Dockerfile only when repeated work needs Nav2 available in every image build. The checkpoint before baking is:
+
+```bash
+./scripts/check_runtime_networking.sh
+./scripts/check_nav2_loopback.sh
+```
