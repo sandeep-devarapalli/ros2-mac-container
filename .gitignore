@@ -2,4 +2,5 @@
 *.log
 *.tmp
 .env
-
+test-results/
+playwright-report/

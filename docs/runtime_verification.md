@@ -233,6 +233,31 @@ RViz then launched successfully in the RDP session:
 
 Visual proof for the tuned `8MB` profile was captured locally at `/private/tmp/ros2-rdp-rviz-8mb.png`.
 
+## GitHub Pages Verification
+
+GitHub Pages is enabled from `main` and `/docs`:
+
+```text
+URL: https://sandeep-devarapalli.github.io/ros2-mac-container/
+Status: built
+HTTPS enforced: true
+```
+
+The public URL returned `HTTP/2 200` and served `docs/index.html`.
+
+The public simulator was exercised with a browser smoke test against the published URL. All sensor, compression, and network selector combinations updated metrics successfully:
+
+```text
+Exercised 32 public simulator combinations; 10 showed saturation warnings.
+```
+
+Local static checks also pass:
+
+```bash
+bash -n scripts/*.sh
+node scripts/check_simulator.mjs
+```
+
 ## Next Safe Step
 
 The signed installer should still not be installed until local package signature validation succeeds. For now, use the source-built CLI path above, or complete Apple-documented source installation interactively with `sudo`, then rerun:

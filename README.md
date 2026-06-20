@@ -36,11 +36,9 @@ The GitHub Pages demo lives at `docs/index.html`. It models sensor payloads, com
 open docs/index.html
 ```
 
-After GitHub Pages is enabled from `main` and `/docs`, the public simulator URL will be:
+The public simulator URL is:
 
-```text
 https://sandeep-devarapalli.github.io/ros2-mac-container/
-```
 
 ## ROS Networking
 
@@ -77,7 +75,7 @@ Recommended transport direction:
 
 ## Verification
 
-Runtime verification status is tracked in `docs/runtime_verification.md`. On the current host, the official Apple `container` signed installer did not pass local signature validation, but the Apple `container` 1.0.0 source build works and has built and launched this ROS 2 image. RDP desktop access and RViz startup have also been verified.
+Runtime verification status is tracked in `docs/runtime_verification.md`. On the current host, the official Apple `container` signed installer did not pass local signature validation, but the Apple `container` 1.0.0 source build works and has built and launched this ROS 2 image. RDP desktop access, RViz startup, GitHub Pages, and simulator selector checks have also been verified.
 
 ## References
 

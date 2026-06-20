@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check shell scripts
+        run: bash -n scripts/*.sh
+
+      - name: Check simulator matrix
+        run: node scripts/check_simulator.mjs
+
+      - name: Check GitHub Pages entrypoint
+        run: |
+          test -s docs/index.html
+          grep -q "ROS2 Wireless Stream Simulator" docs/index.html
