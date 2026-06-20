@@ -136,13 +136,14 @@ ros2_mac_container
 RDP: 127.0.0.1:3389
 ROS bridge/WebSocket: 127.0.0.1:8765
 Zenoh route: 127.0.0.1:7447
+ROS 2 socket buffer cap: 16777216 bytes
 ```
 
 Runtime state:
 
 ```text
 ID                  IMAGE                       OS     ARCH   STATE    IP
-ros2_mac_container  ros2-mac-container:latest   linux  arm64  running  192.168.64.4/24
+ros2_mac_container  ros2-mac-container:latest   linux  arm64  running  192.168.64.5/24
 ```
 
 Host port listeners were verified:
@@ -186,7 +187,33 @@ failed to increase socket receive buffer size to at least 10485760 bytes, curren
 rmw_create_node: failed to create domain
 ```
 
-The repository CycloneDDS profile now requests `4MB` send and receive buffers, which stays below the observed Apple `container` kernel limit. After mirroring that config into the running container, `ros2 doctor --report` completed with:
+Linux reported default socket caps of `4194304` bytes:
+
+```text
+net.core.rmem_max = 4194304
+net.core.wmem_max = 4194304
+```
+
+Raising the caps live to `16777216` bytes allowed an `8MB` CycloneDDS profile to pass `ros2 doctor --report`. The container entrypoint now applies that tuning at startup through `ROS2_SOCKET_BUFFER_BYTES`, and the repository CycloneDDS profile requests `8MB` send and receive buffers.
+
+If socket tuning fails on a future runtime, lower `config/cyclonedds.xml` to `4MB` before running ROS graph tools.
+
+The rebuilt container logs confirmed startup tuning:
+
+```text
+ROS 2 socket buffer caps set to 16777216 bytes.
+```
+
+The rebuilt container also reported:
+
+```text
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+SocketReceiveBufferSize min="8MB"
+SocketSendBufferSize min="8MB"
+```
+
+With the tuned runtime, `ros2 doctor --report` completed with:
 
 ```text
 RMW MIDDLEWARE
@@ -204,7 +231,7 @@ RViz then launched successfully in the RDP session:
 [INFO] [rviz2]: OpenGl version: 4.5 (GLSL 4.5)
 ```
 
-Visual proof was captured locally at `/private/tmp/ros2-rdp-after-unlock.png`.
+Visual proof for the tuned `8MB` profile was captured locally at `/private/tmp/ros2-rdp-rviz-8mb.png`.
 
 ## Next Safe Step
 

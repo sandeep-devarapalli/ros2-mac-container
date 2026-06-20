@@ -51,6 +51,14 @@ export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 export CYCLONEDDS_URI=file:///opt/ros2-mac-container/cyclonedds.xml
 ```
 
+The entrypoint raises Linux socket buffer caps to support the default `8MB` CycloneDDS send and receive buffers:
+
+```bash
+ROS2_SOCKET_BUFFER_BYTES=16777216 ./scripts/start_container.sh
+```
+
+If socket tuning fails on a future runtime, lower `config/cyclonedds.xml` back to `4MB` before running ROS graph tools.
+
 For physical robots or sensor rigs, prefer an edge device such as a Raspberry Pi or Jetson that publishes compressed topics over a dedicated 5 GHz or 6 GHz bridge. Keep raw USB sensors on the edge side and route ROS 2 data over the network.
 
 Recommended transport direction:

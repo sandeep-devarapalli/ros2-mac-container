@@ -12,8 +12,8 @@
       </Peers>
     </Discovery>
     <Internal>
-      <SocketReceiveBufferSize min="4MB"/>
-      <SocketSendBufferSize min="4MB"/>
+      <SocketReceiveBufferSize min="8MB"/>
+      <SocketSendBufferSize min="8MB"/>
     </Internal>
   </Domain>
 </CycloneDDS>
