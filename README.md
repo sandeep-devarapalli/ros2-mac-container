@@ -67,6 +67,10 @@ Recommended transport direction:
 - `scripts/attach_container.sh`: opens a shell as the `ros` user.
 - `scripts/stop_container.sh`: stops the running container.
 
+## Verification
+
+Runtime verification status is tracked in `docs/runtime_verification.md`. The current host has not run the full container build because the official Apple `container` signed installer package did not pass local macOS signature validation.
+
 ## References
 
 - Apple `container`: https://github.com/apple/container
@@ -74,4 +78,3 @@ Recommended transport direction:
 - Eclipse CycloneDDS: https://github.com/eclipse-cyclonedds/cyclonedds
 - Eclipse Zenoh: https://github.com/eclipse-zenoh/zenoh
 - ROS image transport: https://github.com/ros-perception/image_transport_plugins
-
