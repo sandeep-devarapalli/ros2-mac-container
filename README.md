@@ -12,6 +12,8 @@ The goal is a native-feeling Ubuntu ROS 2 desktop on an ARM64 Mac, with KDE/xrdp
 - `rosbridge_server` at `127.0.0.1:8765`.
 - Zenoh router from `rmw_zenoh_cpp` at `127.0.0.1:7447`.
 - A GitHub Pages wireless stream simulator for payload/compression/link tradeoffs.
+- Edge-device setup docs for Raspberry Pi, Jetson, or robot-side computers.
+- Simulation and navigation testing notes for turtlesim, Nav2, TurtleBot3, and Gazebo.
 
 ## Requirements
 
@@ -87,6 +89,23 @@ This verifies:
 
 Runtime verification status and current host notes are tracked in `docs/runtime_verification.md`.
 
+## Test The ROS 2 Environment
+
+Start with the repeatable runtime smoke:
+
+```bash
+./scripts/check_runtime_networking.sh
+```
+
+Then RDP into the container and test the included lightweight simulator:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 run turtlesim turtlesim_node
+```
+
+For navigation work, install Nav2/TurtleBot3/Gazebo only after the base runtime is healthy. The optional path is documented in `docs/simulation_navigation.md`.
+
 ## ROS Networking
 
 The default container uses CycloneDDS:
@@ -151,6 +170,17 @@ rviz2
 ```
 
 On the robot or sensor edge device, publish compressed camera, point-cloud, and telemetry topics over a dedicated 5 GHz or 6 GHz link. Keep high-bandwidth USB devices attached to the edge device, not the Mac container.
+
+See `docs/edge_device_setup.md` for CycloneDDS peer mode, Zenoh route checks, compressed camera transport, point-cloud guidance, and edge-to-Mac smoke tests.
+
+## Documentation
+
+- `docs/architecture.md`: system layout and responsibility split.
+- `docs/rdp_setup.md`: RDP client setup and troubleshooting.
+- `docs/wireless_streaming.md`: transport guidance for Wi-Fi sensor streams.
+- `docs/edge_device_setup.md`: robot or sensor edge-device setup.
+- `docs/simulation_navigation.md`: ROS smoke tests, turtlesim, and optional Nav2/TurtleBot3 simulation.
+- `docs/runtime_verification.md`: current host verification notes and evidence.
 
 ## References
 

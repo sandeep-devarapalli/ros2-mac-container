@@ -10,6 +10,8 @@ Robot sensors -> Edge computer -> Wi-Fi bridge -> Mac host -> Apple container ->
 
 Use a dedicated 5 GHz or 6 GHz bridge when possible.
 
+For the full robot-side setup, see `docs/edge_device_setup.md`.
+
 ## Cameras
 
 Avoid raw image topics across Wi-Fi. Prefer:

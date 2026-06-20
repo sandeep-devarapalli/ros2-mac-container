@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CycloneDDS xmlns="https://cdds.io/config">
+  <Domain id="any">
+    <General>
+      <AllowMulticast>false</AllowMulticast>
+      <MaxMessageSize>65500B</MaxMessageSize>
+    </General>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <Peers>
+        <!-- Replace with the Mac host or container-reachable peer address. -->
+        <Peer Address="MAC_OR_CONTAINER_IP"/>
+      </Peers>
+    </Discovery>
+    <Internal>
+      <SocketReceiveBufferSize min="4MB"/>
+      <SocketSendBufferSize min="4MB"/>
+    </Internal>
+  </Domain>
+</CycloneDDS>
