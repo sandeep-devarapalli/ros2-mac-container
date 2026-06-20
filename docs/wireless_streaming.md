@@ -1,0 +1,33 @@
+# Wireless Streaming
+
+macOS container environments are not a reliable place to pass high-bandwidth USB sensors directly into Linux. Use an edge device on the robot and stream ROS 2 data into the Mac container.
+
+## Recommended Layout
+
+```text
+Robot sensors -> Edge computer -> Wi-Fi bridge -> Mac host -> Apple container -> ROS 2 tools
+```
+
+Use a dedicated 5 GHz or 6 GHz bridge when possible.
+
+## Cameras
+
+Avoid raw image topics across Wi-Fi. Prefer:
+
+```bash
+ros2 run image_transport republish raw compressed
+```
+
+For higher efficiency, use a hardware H.264 encoder on the edge device and decode inside the container or host-side viewer.
+
+## LiDAR
+
+Raw point clouds can burst and fragment heavily over Wi-Fi. Prefer compressed point-cloud transport where available, and keep full-rate raw topics local to the edge computer for recording or safety-critical logic.
+
+## DDS and Zenoh
+
+Default ROS 2 discovery can be noisy on Wi-Fi. Two practical options:
+
+- Use CycloneDDS with explicit peers in `config/cyclonedds.xml`.
+- Run Zenoh on the edge device and in the container, using port `7447`.
+
