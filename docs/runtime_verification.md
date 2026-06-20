@@ -459,9 +459,134 @@ Couldn't find a preferred IP via the getifaddrs() call; I'm assuming that your I
 
 That warning did not block local in-container simulation, but it should be investigated before treating Gazebo transport as a remote robot networking path. ROS bridge and Zenoh remain the repo's verified network paths for external clients.
 
+## Full Nav2 Loopback Verification
+
+Full Nav2 packages were installed only in the running container:
+
+```bash
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  ros-jazzy-navigation2 \
+  ros-jazzy-nav2-bringup \
+  ros-jazzy-slam-toolbox \
+  ros-jazzy-turtlebot3-gazebo \
+  ros-jazzy-turtlebot3-navigation2 \
+  ros-jazzy-nav2-loopback-sim
+```
+
+The full package layer added `143` packages, downloaded `100 MB`, and used about `607 MB`. `ros-jazzy-nav2-loopback-sim` was a separate required package; it added `3` packages, downloaded `1.4 MB`, and used about `1.8 MB`.
+
+Installed versions:
+
+```text
+ros-jazzy-navigation2              1.3.12-1noble.20260615.092426
+ros-jazzy-nav2-bringup             1.3.12-1noble.20260615.095620
+ros-jazzy-slam-toolbox             2.8.5-1noble.20260614.104642
+ros-jazzy-turtlebot3-gazebo        2.3.7-1noble.20260614.084413
+ros-jazzy-turtlebot3-navigation2   2.3.6-1noble.20260615.101748
+ros-jazzy-nav2-loopback-sim        1.3.12-1noble.20260614.054648
+```
+
+The available launch files differ from older TurtleBot tutorials:
+
+```text
+/opt/ros/jazzy/share/nav2_bringup/launch/tb3_loopback_simulation.launch.py
+/opt/ros/jazzy/share/turtlebot3_navigation2/launch/navigation2.launch.py
+/opt/ros/jazzy/share/turtlebot3_gazebo/launch/turtlebot3_world.launch.py
+```
+
+The Nav2 loopback launch requires a map-to-odom transform before startup. Without it, lifecycle activation stops at `planner_server`:
+
+```text
+Failed to activate global_costmap because transform from base_link to map did not become available before timeout
+Failed to bring up all requested nodes. Aborting bringup.
+```
+
+A clean headless launch used a known free-space start pose from the `tb3_sandbox` map:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 run tf2_ros static_transform_publisher -2.0 -0.5 0 0 0 0 map odom
+ros2 launch nav2_bringup tb3_loopback_simulation.launch.py use_rviz:=False
+```
+
+All checked lifecycle nodes reached `active [3]`:
+
+```text
+map_server active [3]
+controller_server active [3]
+smoother_server active [3]
+planner_server active [3]
+behavior_server active [3]
+bt_navigator active [3]
+waypoint_follower active [3]
+velocity_smoother active [3]
+route_server active [3]
+collision_monitor active [3]
+docking_server active [3]
+```
+
+The expected Nav2 graph was present:
+
+```text
+/clock
+/cmd_vel
+/cmd_vel_nav
+/cmd_vel_smoothed
+/goal_pose
+/initialpose
+/map
+/odom
+/plan
+/scan
+/tf
+/tf_static
+```
+
+The loopback simulator published `/clock` at about `10 Hz`, and Nav2 exposed the expected action servers, including:
+
+```text
+/compute_path_to_pose [nav2_msgs/action/ComputePathToPose]
+/follow_path [nav2_msgs/action/FollowPath]
+/navigate_to_pose [nav2_msgs/action/NavigateToPose]
+```
+
+A goal from known free space `(-2.0, -0.5)` to `(2.0, 0.0)` was accepted:
+
+```text
+Goal accepted with ID: 34135c81a0c7485a8a1a3c876f47ee77
+distance_remaining: 4.300278663635254
+```
+
+The planner published a `/plan` beginning at the expected start pose:
+
+```text
+frame_id: map
+position:
+  x: -1.9999998807907104
+  y: -0.49999985843896866
+```
+
+The controller also produced velocity commands on `/cmd_vel_nav` at about `20 Hz`:
+
+```text
+linear.x: 0.17421060800552368
+angular.z: -0.04227377846837044
+```
+
+Closed-loop motion did not complete in this smoke. `/cmd_vel_smoothed` published, but final `/cmd_vel`, `/scan`, and `/odom` did not produce sampled messages during the check. The Nav2 logs showed:
+
+```text
+Robot to stop due to invalid source.
+Failed to make progress
+[follow_path] [ActionServer] Aborting handle.
+```
+
+Treat this as a partial full-Nav2 proof: package install, lifecycle activation, goal acceptance, planning, and controller output are verified. Robot motion and RViz goal completion are still blocked by the loopback simulator sensor/odometry/final-command path.
+
 ## Next Safe Step
 
-The next simulator step is to install full Nav2 bringup on top of the now-verified minimal Gazebo bridge, then verify lifecycle nodes, `/map`, planning, and RViz goal execution before baking Nav2 packages into the base image.
+The next simulator step is to resolve the Nav2 loopback command path: confirm why `/scan` and `/odom` do not publish samples, either configure collision monitor/sensor inputs correctly or bypass it for a controlled smoke, then rerun the same goal until `/cmd_vel` reaches the simulator and the robot pose changes. Do not bake Nav2 packages into the Dockerfile until closed-loop motion and RViz goal completion are verified.
 
 The signed installer should still not be installed until local package signature validation succeeds. For now, use the source-built CLI path above, or complete Apple-documented source installation interactively with `sudo`, then rerun:
 

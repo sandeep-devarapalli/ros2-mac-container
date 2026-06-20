@@ -64,6 +64,7 @@ ros-jazzy-slam-toolbox
 ros-jazzy-turtlebot3-gazebo
 ros-jazzy-turtlebot3-navigation2
 ros-jazzy-ros-gz-sim
+ros-jazzy-nav2-loopback-sim
 ```
 
 Start with the smallest proven Gazebo/TurtleBot path in the running container:
@@ -129,12 +130,53 @@ Only after the minimal bridge works, install full navigation packages:
 sudo apt-get install -y \
   ros-jazzy-navigation2 \
   ros-jazzy-nav2-bringup \
+  ros-jazzy-nav2-loopback-sim \
   ros-jazzy-slam-toolbox \
   ros-jazzy-turtlebot3-gazebo \
   ros-jazzy-turtlebot3-navigation2
 ```
 
-Then use RDP and RViz to confirm:
+For a headless lifecycle and planning smoke, start with the Nav2 loopback simulation. Use a free start pose from the default `tb3_sandbox` map:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 run tf2_ros static_transform_publisher -2.0 -0.5 0 0 0 0 map odom
+```
+
+In a second terminal:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 launch nav2_bringup tb3_loopback_simulation.launch.py use_rviz:=False
+```
+
+Confirm lifecycle and topics:
+
+```bash
+for n in map_server controller_server smoother_server planner_server behavior_server bt_navigator waypoint_follower velocity_smoother route_server collision_monitor docking_server; do
+  ros2 lifecycle get /$n
+done
+
+ros2 topic list | grep -E '^/(clock|cmd_vel|cmd_vel_nav|cmd_vel_smoothed|goal_pose|map|odom|plan|scan|tf|tf_static)$'
+```
+
+Send a goal to another known free cell:
+
+```bash
+ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
+  "{pose: {header: {frame_id: map}, pose: {position: {x: 2.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}" \
+  --feedback
+```
+
+Current verification status:
+
+- Lifecycle activation works when `map -> odom` exists before launch.
+- `/navigate_to_pose` accepts goals.
+- `/plan` is published.
+- `/cmd_vel_nav` is produced at about `20 Hz`.
+- Closed-loop motion is still blocked because `/scan`, `/odom`, and final `/cmd_vel` did not emit sampled messages during the smoke; collision monitor reported an invalid source and the controller eventually failed to make progress.
+
+After that command path is fixed, use RDP and RViz to confirm:
 
 - `/map`, `/tf`, `/odom`, `/scan`, and `/cmd_vel` exist.
 - The robot model appears.
