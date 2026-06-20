@@ -14,7 +14,7 @@ Architecture: arm64
 ```text
 Branch: main
 Remote: origin/main
-Baseline before this note: bcf8ff6 Create Apple container ROS 2 desktop scaffold
+Baseline before source-build verification: 10c86ca Document container runtime verification blocker
 ```
 
 ## Completed Checks
@@ -25,9 +25,9 @@ bash -n scripts/attach_container.sh scripts/build_container.sh scripts/container
 
 The simulator JavaScript compiles, and all 32 sensor/compression/network combinations produce finite metrics.
 
-## Blocker
+## Installer Signature Check
 
-The Apple `container` CLI is not installed on this host. The official signed installer package was downloaded from the Apple GitHub release:
+The official signed installer package was downloaded from the Apple GitHub release:
 
 ```text
 Release: apple/container 1.0.0
@@ -49,9 +49,129 @@ spctl -a -vv -t install /private/tmp/container-1.0.0-installer-signed.pkg
 
 Because the signed installer does not validate locally, it was not installed.
 
+## Source Build Verification
+
+Apple `container` 1.0.0 was built from source instead:
+
+```text
+Source: https://github.com/apple/container
+Tag: 1.0.0
+Commit: ee848e3 Add backward compat for ContainerConfig cpuOverhead
+Xcode: 26.5
+Swift: 6.3.2
+```
+
+The source tree was cloned under `/private/tmp/apple-container-src` to avoid macOS Desktop/Documents virtualization permission issues. The release build completed and produced:
+
+```text
+/private/tmp/apple-container-src/bin/container
+/private/tmp/apple-container-src/bin/container-apiserver
+container CLI version 1.0.0 (build: release, commit: ee848e3)
+```
+
+Unit tests passed:
+
+```text
+XCTest: 94 tests, 0 failures
+Swift Testing: 544 tests in 69 suites passed
+```
+
+The upstream integration target initially failed while downloading the Kata kernel:
+
+```text
+Installing kernel...
+Error: HTTPClientError.connectTimeout
+```
+
+The same kernel archive was then downloaded directly and installed from the local tarball:
+
+```text
+Archive: kata-static-3.28.0-arm64.tar.zst
+SHA-256: f63d54507d1f18635d94475077e4c2330de4d8e05cedf25f7c38f063b0e66a91
+Kernel: opt/kata/share/kata-containers/vmlinux-6.18.15-186
+```
+
+Apple `container` runtime smoke test passed:
+
+```bash
+PATH=/private/tmp/apple-container-src/bin:$PATH container run --rm alpine uname -a
+```
+
+```text
+Linux a47b421b-a51e-4914-aca8-938008f761b0 6.18.15 #1 SMP Tue Mar 17 01:36:53 UTC 2026 aarch64 Linux
+```
+
+Global install was not completed because `make install` requires an interactive `sudo` password. Until the user installs the signed package or completes `make install`, use:
+
+```bash
+export PATH=/private/tmp/apple-container-src/bin:$PATH
+```
+
+## ROS 2 Image Verification
+
+With the source-built CLI on `PATH`, repo preflight passed:
+
+```bash
+PATH=/private/tmp/apple-container-src/bin:$PATH ./scripts/preflight.sh
+```
+
+The ROS 2 desktop image built successfully:
+
+```bash
+PATH=/private/tmp/apple-container-src/bin:$PATH ./scripts/build_container.sh
+```
+
+```text
+ros2-mac-container:latest
+```
+
+The container launched successfully:
+
+```bash
+PATH=/private/tmp/apple-container-src/bin:$PATH ./scripts/start_container.sh
+```
+
+```text
+ros2_mac_container
+RDP: 127.0.0.1:3389
+ROS bridge/WebSocket: 127.0.0.1:8765
+Zenoh route: 127.0.0.1:7447
+```
+
+Runtime state:
+
+```text
+ID                  IMAGE                       OS     ARCH   STATE    IP
+ros2_mac_container  ros2-mac-container:latest   linux  arm64  running  192.168.64.4/24
+```
+
+Host port listeners were verified:
+
+```text
+127.0.0.1:3389  LISTEN
+127.0.0.1:8765  LISTEN
+127.0.0.1:7447  LISTEN
+```
+
+Inside the container, `xrdp`, `xrdp-sesman`, ROS 2, RViz, and the key transport packages were present:
+
+```text
+/usr/sbin/xrdp --nodaemon
+/usr/sbin/xrdp-sesman --nodaemon
+ROS2_OK
+/opt/ros/jazzy/bin/rviz2
+ros-jazzy-desktop 0.11.0-1noble.20260615.092556
+ros-jazzy-rviz2 14.1.22-1noble.20260615.083715
+ros-jazzy-compressed-image-transport 4.0.7-1noble.20260614.053443
+ros-jazzy-point-cloud-transport 4.0.8-1noble.20260614.051508
+ros-jazzy-rmw-cyclonedds-cpp 2.2.3-1noble.20260612.091852
+```
+
+`rviz2 --help` was not used as a pass/fail check because the Qt GUI binary aborts without an active display in a noninteractive `container exec` shell. Verify RViz visually through RDP.
+
 ## Next Safe Step
 
-Do not run the installer until the package signature validates. Recheck the latest Apple `container` release or use an Apple-documented alternative install path, then rerun:
+The signed installer should still not be installed until local package signature validation succeeds. For now, use the source-built CLI path above, or complete Apple-documented source installation interactively with `sudo`, then rerun:
 
 ```bash
 ./scripts/preflight.sh

@@ -69,7 +69,7 @@ Recommended transport direction:
 
 ## Verification
 
-Runtime verification status is tracked in `docs/runtime_verification.md`. The current host has not run the full container build because the official Apple `container` signed installer package did not pass local macOS signature validation.
+Runtime verification status is tracked in `docs/runtime_verification.md`. On the current host, the official Apple `container` signed installer did not pass local signature validation, but the Apple `container` 1.0.0 source build works and has built and launched this ROS 2 image.
 
 ## References
 
