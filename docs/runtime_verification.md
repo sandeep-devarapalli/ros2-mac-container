@@ -169,6 +169,43 @@ ros-jazzy-rmw-cyclonedds-cpp 2.2.3-1noble.20260612.091852
 
 `rviz2 --help` was not used as a pass/fail check because the Qt GUI binary aborts without an active display in a noninteractive `container exec` shell. Verify RViz visually through RDP.
 
+## RDP and RViz Verification
+
+RDP was verified from macOS with FreeRDP's SDL client:
+
+```bash
+sdl-freerdp /v:127.0.0.1:3389 /u:ros /p:ros /cert:ignore /size:1280x800 /dynamic-resolution
+```
+
+The KDE/xrdp session started on display `:10.0`. The session may lock automatically; unlock it with password `ros`.
+
+The first RViz launch exposed a CycloneDDS socket buffer mismatch:
+
+```text
+failed to increase socket receive buffer size to at least 10485760 bytes, current is 8388608 bytes
+rmw_create_node: failed to create domain
+```
+
+The repository CycloneDDS profile now requests `4MB` send and receive buffers, which stays below the observed Apple `container` kernel limit. After mirroring that config into the running container, `ros2 doctor --report` completed with:
+
+```text
+RMW MIDDLEWARE
+middleware name : rmw_cyclonedds_cpp
+
+ROS 2 INFORMATION
+distribution name : jazzy
+distribution status : active
+```
+
+RViz then launched successfully in the RDP session:
+
+```text
+[INFO] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [rviz2]: OpenGl version: 4.5 (GLSL 4.5)
+```
+
+Visual proof was captured locally at `/private/tmp/ros2-rdp-after-unlock.png`.
+
 ## Next Safe Step
 
 The signed installer should still not be installed until local package signature validation succeeds. For now, use the source-built CLI path above, or complete Apple-documented source installation interactively with `sudo`, then rerun:

@@ -69,7 +69,7 @@ Recommended transport direction:
 
 ## Verification
 
-Runtime verification status is tracked in `docs/runtime_verification.md`. On the current host, the official Apple `container` signed installer did not pass local signature validation, but the Apple `container` 1.0.0 source build works and has built and launched this ROS 2 image.
+Runtime verification status is tracked in `docs/runtime_verification.md`. On the current host, the official Apple `container` signed installer did not pass local signature validation, but the Apple `container` 1.0.0 source build works and has built and launched this ROS 2 image. RDP desktop access and RViz startup have also been verified.
 
 ## References
 
