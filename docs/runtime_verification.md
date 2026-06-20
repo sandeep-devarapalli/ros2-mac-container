@@ -315,6 +315,44 @@ rosbridge websocket smoke received: rosbridge smoke ok
 
 `ros2 doctor --report` still completed with `rmw_cyclonedds_cpp`, and the live topic list included rosbridge topics plus `/codex_rosbridge_smoke`.
 
+## Turtlesim Verification
+
+The lightweight simulator path was verified through the live RDP desktop before installing heavier Nav2 or Gazebo packages.
+
+A temporary FreeRDP session created display `:10`, then `turtlesim_node` launched successfully:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+DISPLAY=:10 XAUTHORITY=/home/ros/.Xauthority ros2 run turtlesim turtlesim_node
+```
+
+The node exposed the expected ROS graph:
+
+```text
+/turtle1/cmd_vel
+/turtle1/color_sensor
+/turtle1/pose
+/turtlesim
+```
+
+Publishing a velocity command moved the turtle. Pose before command:
+
+```text
+x: 5.544444561004639
+y: 5.544444561004639
+theta: 0.0
+```
+
+Pose after command:
+
+```text
+x: 7.343994140625
+y: 6.3257293701171875
+theta: 0.8064000010490417
+```
+
+Visual proof was captured locally at `/private/tmp/ros2-turtlesim-smoke.png`.
+
 ## Next Safe Step
 
 The signed installer should still not be installed until local package signature validation succeeds. For now, use the source-built CLI path above, or complete Apple-documented source installation interactively with `sudo`, then rerun:
