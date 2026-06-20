@@ -495,20 +495,27 @@ The available launch files differ from older TurtleBot tutorials:
 /opt/ros/jazzy/share/turtlebot3_gazebo/launch/turtlebot3_world.launch.py
 ```
 
-The Nav2 loopback launch requires a map-to-odom transform before startup. Without it, lifecycle activation stops at `planner_server`:
+An early smoke used only a static `map -> odom` transform and stalled the command path. That made lifecycle activation possible but did not initialize the loopback simulator's laser and odometry timers:
 
 ```text
 Failed to activate global_costmap because transform from base_link to map did not become available before timeout
 Failed to bring up all requested nodes. Aborting bringup.
 ```
 
-A clean headless launch used a known free-space start pose from the `tb3_sandbox` map:
+A clean headless launch starts the Nav2 loopback simulator, then publishes `/initialpose` using a known free-space start pose from the `tb3_sandbox` map:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-ros2 run tf2_ros static_transform_publisher -2.0 -0.5 0 0 0 0 map odom
 ros2 launch nav2_bringup tb3_loopback_simulation.launch.py use_rviz:=False
 ```
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 topic pub --once /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
+  "{header: {frame_id: map}, pose: {pose: {position: {x: -2.0, y: -0.5, z: 0.0}, orientation: {w: 1.0}}}}"
+```
+
+The `/initialpose` message is the important step. The loopback simulator ignores velocity updates and does not start laser scan publishing until it receives an initial pose.
 
 All checked lifecycle nodes reached `active [3]`:
 
@@ -574,19 +581,37 @@ linear.x: 0.17421060800552368
 angular.z: -0.04227377846837044
 ```
 
-Closed-loop motion did not complete in this smoke. `/cmd_vel_smoothed` published, but final `/cmd_vel`, `/scan`, and `/odom` did not produce sampled messages during the check. The Nav2 logs showed:
+A follow-up direct command proved the loopback simulator moved once `/initialpose` had initialized it:
 
 ```text
-Robot to stop due to invalid source.
-Failed to make progress
-[follow_path] [ActionServer] Aborting handle.
+Before direct /cmd_vel: map -> base_link translation [-2.000, -0.500, 0.010]
+After direct /cmd_vel:  map -> base_link translation [-1.400, -0.500, 0.010]
 ```
 
-Treat this as a partial full-Nav2 proof: package install, lifecycle activation, goal acceptance, planning, and controller output are verified. Robot motion and RViz goal completion are still blocked by the loopback simulator sensor/odometry/final-command path.
+The same loopback launch then completed a real `NavigateToPose` action:
+
+```text
+Goal accepted with ID: 7e34e70d57b4466f8c10fd9667add615
+Result:
+    error_code: 0
+error_msg: ''
+Goal finished with status: SUCCEEDED
+```
+
+Final sampled TF after the goal:
+
+```text
+map -> base_link translation [2.039, -0.108, 0.010]
+yaw 12.919 degrees
+```
+
+`/scan` published from `base_scan`, and `/odom` had one publisher from `loopback_simulator` plus Nav2 subscribers from `controller_server` and `bt_navigator`.
+
+Treat this as a full headless Nav2 loopback proof: package install, lifecycle activation, initial pose, laser scan, goal acceptance, planning, controller output, final command path, loopback motion, and action success are verified.
 
 ## Next Safe Step
 
-The next simulator step is to resolve the Nav2 loopback command path: confirm why `/scan` and `/odom` do not publish samples, either configure collision monitor/sensor inputs correctly or bypass it for a controlled smoke, then rerun the same goal until `/cmd_vel` reaches the simulator and the robot pose changes. Do not bake Nav2 packages into the Dockerfile until closed-loop motion and RViz goal completion are verified.
+The next simulator step is RViz visual proof of the same Nav2 loopback goal over RDP, followed by deciding whether to keep Nav2 as an optional install or bake the package set into the image.
 
 The signed installer should still not be installed until local package signature validation succeeds. For now, use the source-built CLI path above, or complete Apple-documented source installation interactively with `sudo`, then rerun:
 

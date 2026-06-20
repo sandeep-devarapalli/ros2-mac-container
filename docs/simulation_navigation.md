@@ -9,7 +9,7 @@ Start small, then add heavier simulation only when the base ROS graph is healthy
 1. ROS graph smoke: `ros2 doctor`, demo talker/listener, rosbridge.
 2. GUI smoke: RDP into KDE and launch RViz.
 3. Lightweight sim: `turtlesim`.
-4. Navigation sim: Nav2 minimal TurtleBot3 or TurtleBot3 Gazebo.
+4. Navigation sim: Nav2 loopback, then minimal TurtleBot3 or TurtleBot3 Gazebo.
 
 ## Base Runtime Smoke
 
@@ -136,19 +136,22 @@ sudo apt-get install -y \
   ros-jazzy-turtlebot3-navigation2
 ```
 
-For a headless lifecycle and planning smoke, start with the Nav2 loopback simulation. Use a free start pose from the default `tb3_sandbox` map:
+For a headless lifecycle, planning, and closed-loop motion smoke, start with the Nav2 loopback simulation:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-ros2 run tf2_ros static_transform_publisher -2.0 -0.5 0 0 0 0 map odom
+ros2 launch nav2_bringup tb3_loopback_simulation.launch.py use_rviz:=False
 ```
 
 In a second terminal:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-ros2 launch nav2_bringup tb3_loopback_simulation.launch.py use_rviz:=False
+ros2 topic pub --once /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
+  "{header: {frame_id: map}, pose: {pose: {position: {x: -2.0, y: -0.5, z: 0.0}, orientation: {w: 1.0}}}}"
 ```
+
+The `/initialpose` message is required. The loopback simulator does not start laser and odometry updates until it receives an initial pose, and a static `map -> odom` transform does not substitute for that internal initialization.
 
 Confirm lifecycle and topics:
 
@@ -158,6 +161,7 @@ for n in map_server controller_server smoother_server planner_server behavior_se
 done
 
 ros2 topic list | grep -E '^/(clock|cmd_vel|cmd_vel_nav|cmd_vel_smoothed|goal_pose|map|odom|plan|scan|tf|tf_static)$'
+ros2 topic echo --once /scan
 ```
 
 Send a goal to another known free cell:
@@ -170,13 +174,15 @@ ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
 
 Current verification status:
 
-- Lifecycle activation works when `map -> odom` exists before launch.
+- Lifecycle activation works after publishing `/initialpose`.
 - `/navigate_to_pose` accepts goals.
 - `/plan` is published.
-- `/cmd_vel_nav` is produced at about `20 Hz`.
-- Closed-loop motion is still blocked because `/scan`, `/odom`, and final `/cmd_vel` did not emit sampled messages during the smoke; collision monitor reported an invalid source and the controller eventually failed to make progress.
+- `/cmd_vel_nav`, `/cmd_vel_smoothed`, and final `/cmd_vel` reach the loopback path.
+- `/scan` publishes from `base_scan`.
+- A direct `/cmd_vel` command moved the loopback pose from `x=-2.000` to `x=-1.400`.
+- A `NavigateToPose` goal from about `(-1.400, -0.500)` to `(2.0, 0.0)` finished with `error_code: 0` and `Goal finished with status: SUCCEEDED`; final sampled TF was about `(2.039, -0.108)`.
 
-After that command path is fixed, use RDP and RViz to confirm:
+Use RDP and RViz to confirm the same workflow visually:
 
 - `/map`, `/tf`, `/odom`, `/scan`, and `/cmd_vel` exist.
 - The robot model appears.
@@ -185,4 +191,4 @@ After that command path is fixed, use RDP and RViz to confirm:
 
 ## When To Bake It Into The Image
 
-Only add these packages to the Dockerfile after the optional install path is proven on your Mac. Baking them in will make the base image larger and rebuilds slower, so keep the default image focused on ROS desktop, RDP, rosbridge, Zenoh, and transport tooling until navigation simulation is a confirmed workflow.
+Only add these packages to the Dockerfile when you want Nav2 available in every image build. Baking them in will make the base image larger and rebuilds slower, so the default image stays focused on ROS desktop, RDP, rosbridge, Zenoh, and transport tooling.
