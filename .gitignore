@@ -2,5 +2,7 @@
 *.log
 *.tmp
 .env
+__pycache__/
+*.py[cod]
 test-results/
 playwright-report/

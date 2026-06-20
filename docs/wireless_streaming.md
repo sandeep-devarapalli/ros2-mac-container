@@ -38,6 +38,12 @@ The container starts `rmw_zenohd` with `config/zenoh-router.json5`, which listen
 After `scripts/start_container.sh`, verify both network ports from macOS:
 
 ```bash
+scripts/check_runtime_networking.sh
+```
+
+For lower-level port-only checks:
+
+```bash
 nc -vz 127.0.0.1 8765
 nc -vz 127.0.0.1 7447
 scripts/check_rosbridge_websocket.py

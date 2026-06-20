@@ -286,6 +286,27 @@ Connection to 127.0.0.1 port 8765 [tcp/ultraseek-http] succeeded!
 Connection to 127.0.0.1 port 7447 [tcp/*] succeeded!
 ```
 
+The standard runtime smoke now wraps the host port checks, rosbridge WebSocket smoke, `ros2 doctor --report`, and process/log checks:
+
+```bash
+scripts/check_runtime_networking.sh
+```
+
+Latest result:
+
+```text
+OK: RDP reachable at 127.0.0.1:3389
+OK: ROS bridge WebSocket reachable at 127.0.0.1:8765
+OK: Zenoh router reachable at 127.0.0.1:7447
+rosbridge websocket smoke received: rosbridge smoke ok
+OK: ros2 doctor completed inside ros2_mac_container
+OK: rosbridge process is running
+OK: Zenoh process is running
+OK: rosbridge startup log found
+OK: Zenoh startup log found
+Runtime networking smoke passed for ros2_mac_container.
+```
+
 The dependency-free WebSocket smoke published `std_msgs/String` to `/codex_rosbridge_smoke` and received it back through the rosbridge subscription:
 
 ```text

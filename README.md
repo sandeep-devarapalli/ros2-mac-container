@@ -2,17 +2,44 @@
 
 Apple Silicon ROS 2 desktop environment using Apple's `container` runtime, RDP desktop access, and wireless sensor-streaming patterns for camera, LiDAR, and telemetry payloads.
 
-This repo targets macOS 26+ on Apple Silicon. It does not install Apple's `container` CLI for you; install it from the Apple project first, then run `container system start`.
+The goal is a native-feeling Ubuntu ROS 2 desktop on an ARM64 Mac, with KDE/xrdp for RViz and rqt, plus host-published ports for rosbridge and Zenoh so robot or sensor data can stream in over Wi-Fi instead of USB passthrough.
+
+## What You Get
+
+- Ubuntu 24.04 ARM64 with ROS 2 Jazzy desktop.
+- KDE Plasma over xrdp at `127.0.0.1:3389`.
+- CycloneDDS configured for Wi-Fi-oriented ROS graph use.
+- `rosbridge_server` at `127.0.0.1:8765`.
+- Zenoh router from `rmw_zenoh_cpp` at `127.0.0.1:7447`.
+- A GitHub Pages wireless stream simulator for payload/compression/link tradeoffs.
+
+## Requirements
+
+- macOS 26+ on Apple Silicon.
+- Apple's `container` CLI and service.
+- An RDP client such as Microsoft Remote Desktop or FreeRDP.
+- About 8 GB RAM available for the container.
+
+This repo does not install Apple's `container` CLI for you. Install it from the Apple project, then start the runtime:
+
+```bash
+container system start
+```
+
+If the signed installer does not validate on your Mac, do not bypass signature validation casually. See `docs/runtime_verification.md` for the source-build path used during this repo's verification.
 
 ## Quick Start
 
 ```bash
+git clone https://github.com/sandeep-devarapalli/ros2-mac-container.git
+cd ros2-mac-container
 container system start
 ./scripts/build_container.sh
 ./scripts/start_container.sh
+./scripts/check_runtime_networking.sh
 ```
 
-Connect from macOS with Microsoft Remote Desktop or another RDP client:
+Then connect from macOS with Microsoft Remote Desktop or another RDP client:
 
 ```text
 Host: 127.0.0.1:3389
@@ -28,6 +55,8 @@ Published ports:
 7447/tcp  Zenoh route
 ```
 
+The default container user is `ros`, password `ros`.
+
 ## Wireless Stream Simulator
 
 The GitHub Pages demo lives at `docs/index.html`. It models sensor payloads, compression choices, wireless link capacity, estimated latency, packet loss, and saturation risk.
@@ -39,6 +68,24 @@ open docs/index.html
 The public simulator URL is:
 
 https://sandeep-devarapalli.github.io/ros2-mac-container/
+
+## Runtime Verification
+
+After `./scripts/start_container.sh`, run:
+
+```bash
+./scripts/check_runtime_networking.sh
+```
+
+This verifies:
+
+- Apple `container` can see `ros2_mac_container` running.
+- RDP, rosbridge, and Zenoh ports are reachable from macOS.
+- rosbridge can publish and receive a `std_msgs/String` over WebSocket.
+- `ros2 doctor --report` completes inside the container.
+- rosbridge and Zenoh processes/logs are present.
+
+Runtime verification status and current host notes are tracked in `docs/runtime_verification.md`.
 
 ## ROS Networking
 
@@ -62,7 +109,7 @@ The entrypoint also starts:
 - `rosbridge_server` on `127.0.0.1:8765`
 - `rmw_zenohd` on `127.0.0.1:7447`, using `config/zenoh-router.json5`
 
-Verify rosbridge from the macOS host:
+You can run just the rosbridge WebSocket smoke from the macOS host:
 
 ```bash
 scripts/check_rosbridge_websocket.py
@@ -81,13 +128,29 @@ Recommended transport direction:
 - `scripts/preflight.sh`: verifies macOS, Apple Silicon, and the `container` service.
 - `scripts/build_container.sh`: builds `ros2-mac-container:latest`.
 - `scripts/start_container.sh`: runs the container and publishes RDP/network ports.
+- `scripts/check_runtime_networking.sh`: verifies the running container, published ports, rosbridge, Zenoh, and ROS doctor.
 - `scripts/check_rosbridge_websocket.py`: publishes and receives a ROS `std_msgs/String` through rosbridge.
 - `scripts/attach_container.sh`: opens a shell as the `ros` user.
 - `scripts/stop_container.sh`: stops the running container.
 
-## Verification
+## Typical Workflow
 
-Runtime verification status is tracked in `docs/runtime_verification.md`. On the current host, the official Apple `container` signed installer did not pass local signature validation, but the Apple `container` 1.0.0 source build works and has built and launched this ROS 2 image. RDP desktop access, RViz startup, GitHub Pages, and simulator selector checks have also been verified.
+On the Mac:
+
+```bash
+./scripts/start_container.sh
+./scripts/check_runtime_networking.sh
+./scripts/attach_container.sh
+```
+
+Inside the container shell:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+rviz2
+```
+
+On the robot or sensor edge device, publish compressed camera, point-cloud, and telemetry topics over a dedicated 5 GHz or 6 GHz link. Keep high-bandwidth USB devices attached to the edge device, not the Mac container.
 
 ## References
 
