@@ -653,9 +653,47 @@ Goal finished with status: SUCCEEDED
 Translation: [2.065, -0.080, 0.010]
 ```
 
+The optional install path was then proven from a fresh container created from `ros2-mac-container:latest`. Before the run, these packages were absent:
+
+```text
+ros-jazzy-navigation2
+ros-jazzy-nav2-bringup
+ros-jazzy-nav2-loopback-sim
+ros-jazzy-slam-toolbox
+ros-jazzy-turtlebot3-gazebo
+ros-jazzy-turtlebot3-navigation2
+```
+
+The install-and-smoke command was:
+
+```bash
+PATH=/private/tmp/apple-container-src/bin:$PATH INSTALL_NAV2=1 ./scripts/check_nav2_loopback.sh
+```
+
+It installed `310` packages, downloaded `233 MB`, and used about `1.16 GB` of additional disk. The requested package versions were:
+
+```text
+ros-jazzy-nav2-bringup             1.3.12-1noble.20260615.095620
+ros-jazzy-nav2-loopback-sim        1.3.12-1noble.20260614.054648
+ros-jazzy-navigation2              1.3.12-1noble.20260615.092426
+ros-jazzy-slam-toolbox             2.8.5-1noble.20260614.104642
+ros-jazzy-turtlebot3-gazebo        2.3.7-1noble.20260614.084413
+ros-jazzy-turtlebot3-navigation2   2.3.6-1noble.20260615.101748
+```
+
+The fresh optional install run finished with:
+
+```text
+OK: Nav2 lifecycle nodes reached active.
+OK: /scan produced a sample.
+OK: NavigateToPose succeeded.
+Goal finished with status: SUCCEEDED
+Translation: [2.038, -0.131, 0.010]
+```
+
 ## Next Safe Step
 
-Keep Nav2 optional for the next slice. Bake it into the image only when repeatable navigation simulation matters more than image size and rebuild time.
+Keep Nav2 optional for the next slice. The install path is now proven, and baking it into the image would add about `1.16 GB` to every build.
 
 The signed installer should still not be installed until local package signature validation succeeds. For now, use the source-built CLI path above, or complete Apple-documented source installation interactively with `sudo`, then rerun:
 

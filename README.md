@@ -104,12 +104,12 @@ source /opt/ros/jazzy/setup.bash
 ros2 run turtlesim turtlesim_node
 ```
 
-For navigation work, install simulator packages only after the base runtime is healthy. The minimal TurtleBot/Gazebo bridge and full Nav2 loopback path have been verified in the live container. The optional path is documented in `docs/simulation_navigation.md`.
+For navigation work, install simulator packages only after the base runtime is healthy. The minimal TurtleBot/Gazebo bridge and full Nav2 loopback path have been verified in the live container. The optional `INSTALL_NAV2=1` path has also been verified from a fresh base container. The optional path is documented in `docs/simulation_navigation.md`.
 
-After installing the optional Nav2 packages, run the repeatable loopback smoke:
+Install and verify the optional Nav2 stack in one pass:
 
 ```bash
-./scripts/check_nav2_loopback.sh
+INSTALL_NAV2=1 ./scripts/check_nav2_loopback.sh
 ```
 
 ## ROS Networking

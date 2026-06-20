@@ -142,6 +142,8 @@ Or let the host-side smoke script install the same optional package set into the
 INSTALL_NAV2=1 ./scripts/check_nav2_loopback.sh
 ```
 
+This install path has been verified from a fresh base container where the Nav2 packages were absent. It installed `310` packages, downloaded `233 MB`, and used about `1.16 GB` of additional disk before running the same loopback smoke successfully.
+
 For a headless lifecycle, planning, and closed-loop motion smoke, start with the Nav2 loopback simulation:
 
 ```bash
@@ -181,6 +183,7 @@ ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
 Current verification status:
 
 - `./scripts/check_nav2_loopback.sh` repeats the headless proof from the Mac host.
+- `INSTALL_NAV2=1 ./scripts/check_nav2_loopback.sh` installs the optional package set from a fresh base container and then runs the proof.
 - Lifecycle activation works after publishing `/initialpose`.
 - `/navigate_to_pose` accepts goals.
 - `/plan` is published.
