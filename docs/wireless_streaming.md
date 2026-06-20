@@ -31,3 +31,16 @@ Default ROS 2 discovery can be noisy on Wi-Fi. Two practical options:
 - Use CycloneDDS with explicit peers in `config/cyclonedds.xml`.
 - Run Zenoh on the edge device and in the container, using port `7447`.
 
+The container starts `rmw_zenohd` with `config/zenoh-router.json5`, which listens on `tcp/0.0.0.0:7447`. The host publishes this as `127.0.0.1:7447`.
+
+## Host Smoke Checks
+
+After `scripts/start_container.sh`, verify both network ports from macOS:
+
+```bash
+nc -vz 127.0.0.1 8765
+nc -vz 127.0.0.1 7447
+scripts/check_rosbridge_websocket.py
+```
+
+The rosbridge smoke publishes `std_msgs/String` to `/codex_rosbridge_smoke` through WebSocket and waits for the echoed subscription message.

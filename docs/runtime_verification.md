@@ -137,13 +137,15 @@ RDP: 127.0.0.1:3389
 ROS bridge/WebSocket: 127.0.0.1:8765
 Zenoh route: 127.0.0.1:7447
 ROS 2 socket buffer cap: 16777216 bytes
+ROS bridge enabled: 1
+Zenoh router enabled: 1
 ```
 
 Runtime state:
 
 ```text
 ID                  IMAGE                       OS     ARCH   STATE    IP
-ros2_mac_container  ros2-mac-container:latest   linux  arm64  running  192.168.64.5/24
+ros2_mac_container  ros2-mac-container:latest   linux  arm64  running  192.168.64.6/24
 ```
 
 Host port listeners were verified:
@@ -166,6 +168,7 @@ ros-jazzy-rviz2 14.1.22-1noble.20260615.083715
 ros-jazzy-compressed-image-transport 4.0.7-1noble.20260614.053443
 ros-jazzy-point-cloud-transport 4.0.8-1noble.20260614.051508
 ros-jazzy-rmw-cyclonedds-cpp 2.2.3-1noble.20260612.091852
+ros-jazzy-rmw-zenoh-cpp 0.2.9-1noble.20260612.051449
 ```
 
 `rviz2 --help` was not used as a pass/fail check because the Qt GUI binary aborts without an active display in a noninteractive `container exec` shell. Verify RViz visually through RDP.
@@ -255,8 +258,41 @@ Local static checks also pass:
 
 ```bash
 bash -n scripts/*.sh
+python3 -m py_compile scripts/check_rosbridge_websocket.py
 node scripts/check_simulator.mjs
 ```
+
+## ROS Bridge and Zenoh Verification
+
+The rebuilt container entrypoint starts rosbridge and Zenoh automatically:
+
+```text
+ROS bridge WebSocket starting on port 8765.
+Zenoh router starting with /opt/ros2-mac-container/zenoh-router.json5.
+```
+
+Service logs confirm both processes are active:
+
+```text
+Rosbridge WebSocket server started on port 8765
+Zenoh can be reached at: tcp/192.168.64.6:7447
+Started Zenoh router with id 84199e97d403ab14f1a2783a36f0d09b
+```
+
+Host port checks passed:
+
+```text
+Connection to 127.0.0.1 port 8765 [tcp/ultraseek-http] succeeded!
+Connection to 127.0.0.1 port 7447 [tcp/*] succeeded!
+```
+
+The dependency-free WebSocket smoke published `std_msgs/String` to `/codex_rosbridge_smoke` and received it back through the rosbridge subscription:
+
+```text
+rosbridge websocket smoke received: rosbridge smoke ok
+```
+
+`ros2 doctor --report` still completed with `rmw_cyclonedds_cpp`, and the live topic list included rosbridge topics plus `/codex_rosbridge_smoke`.
 
 ## Next Safe Step
 

@@ -21,6 +21,9 @@ jobs:
       - name: Check shell scripts
         run: bash -n scripts/*.sh
 
+      - name: Check Python helpers
+        run: python3 -m py_compile scripts/check_rosbridge_websocket.py
+
       - name: Check simulator matrix
         run: node scripts/check_simulator.mjs
 

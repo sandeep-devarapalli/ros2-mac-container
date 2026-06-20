@@ -57,6 +57,17 @@ ROS2_SOCKET_BUFFER_BYTES=16777216 ./scripts/start_container.sh
 
 If socket tuning fails on a future runtime, lower `config/cyclonedds.xml` back to `4MB` before running ROS graph tools.
 
+The entrypoint also starts:
+
+- `rosbridge_server` on `127.0.0.1:8765`
+- `rmw_zenohd` on `127.0.0.1:7447`, using `config/zenoh-router.json5`
+
+Verify rosbridge from the macOS host:
+
+```bash
+scripts/check_rosbridge_websocket.py
+```
+
 For physical robots or sensor rigs, prefer an edge device such as a Raspberry Pi or Jetson that publishes compressed topics over a dedicated 5 GHz or 6 GHz bridge. Keep raw USB sensors on the edge side and route ROS 2 data over the network.
 
 Recommended transport direction:
@@ -70,6 +81,7 @@ Recommended transport direction:
 - `scripts/preflight.sh`: verifies macOS, Apple Silicon, and the `container` service.
 - `scripts/build_container.sh`: builds `ros2-mac-container:latest`.
 - `scripts/start_container.sh`: runs the container and publishes RDP/network ports.
+- `scripts/check_rosbridge_websocket.py`: publishes and receives a ROS `std_msgs/String` through rosbridge.
 - `scripts/attach_container.sh`: opens a shell as the `ros` user.
 - `scripts/stop_container.sh`: stops the running container.
 

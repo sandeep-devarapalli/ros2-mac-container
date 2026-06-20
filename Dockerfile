@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dbus-x11 iproute2 iputils-ping kde-plasma-desktop konsole net-tools \
     python3-argcomplete python3-colcon-common-extensions \
     ros-jazzy-compressed-image-transport ros-jazzy-desktop ros-jazzy-image-transport \
-    ros-jazzy-rmw-cyclonedds-cpp ros-jazzy-rosbridge-server xorgxrdp xrdp \
+    ros-jazzy-rmw-cyclonedds-cpp ros-jazzy-rmw-zenoh-cpp ros-jazzy-rosbridge-server xorgxrdp xrdp \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -s /bin/bash ros \
@@ -48,4 +48,3 @@ RUN chmod +x /usr/local/bin/container-entrypoint.sh \
 EXPOSE 3389/tcp 8765/tcp 7447/tcp
 
 ENTRYPOINT ["/usr/local/bin/container-entrypoint.sh"]
-
