@@ -52,7 +52,7 @@ ros2 run turtlesim turtle_teleop_key
 
 This proves ROS topics, keyboard teleop, and GUI forwarding through xrdp before installing heavier simulation packages.
 
-## Optional Nav2 / TurtleBot3 Install
+## Optional TurtleBot Gazebo Install
 
 The current image does not install Nav2 or TurtleBot3 by default because the package set is large. The Jazzy apt repository exposes the required packages, including:
 
@@ -66,51 +66,75 @@ ros-jazzy-turtlebot3-navigation2
 ros-jazzy-ros-gz-sim
 ```
 
-To try navigation in the running container:
+Start with the smallest proven Gazebo/TurtleBot path in the running container:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y \
-  ros-jazzy-navigation2 \
-  ros-jazzy-nav2-bringup \
-  ros-jazzy-nav2-minimal-tb3-sim \
-  ros-jazzy-slam-toolbox \
-  ros-jazzy-turtlebot3-gazebo \
-  ros-jazzy-turtlebot3-navigation2 \
-  ros-jazzy-ros-gz-sim
+sudo apt-get install -y ros-jazzy-nav2-minimal-tb3-sim
 ```
 
-This is intentionally optional. A simulated install on the current Jazzy image reported about 300 new packages for the full Nav2/TurtleBot3/Gazebo path.
+This is intentionally optional. The minimal package added `164` packages, downloaded `131 MB`, and used about `555 MB` of additional disk in the live container. A full Nav2/TurtleBot3 path will be larger.
 
-## Navigation Test Path
+## Minimal Gazebo Bridge Test Path
 
-After installing the optional packages, use RDP and run one terminal per process:
+The verified Jazzy `nav2_minimal_tb3_sim` package provides Gazebo assets and a spawn/bridge launch. It does not provide a full Nav2 bringup launch in this package version.
+
+Create the headless world:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-export TURTLEBOT3_MODEL=burger
+xacro /opt/ros/jazzy/share/nav2_minimal_tb3_sim/worlds/tb3_sandbox.sdf.xacro headless:=true > /tmp/tb3_sandbox_headless.sdf
 ```
 
-Start with the lightest Nav2 simulator package:
+Start Gazebo server-only mode:
 
 ```bash
-ros2 pkg prefix nav2_minimal_tb3_sim
-ros2 launch nav2_minimal_tb3_sim tb3_simulation_launch.py
+source /opt/ros/jazzy/setup.bash
+export GZ_SIM_RESOURCE_PATH=/opt/ros/jazzy/share/nav2_minimal_tb3_sim/models:/opt/ros/jazzy/share
+ros2 launch ros_gz_sim gz_sim.launch.py gz_args:="-r -s /tmp/tb3_sandbox_headless.sdf"
 ```
 
-If that launch file is not present in the package version installed on your host, inspect available launch files:
+In a second terminal, spawn the robot and bridge topics:
 
 ```bash
-find /opt/ros/jazzy/share/nav2_minimal_tb3_sim -maxdepth 3 -type f -name '*.py'
+source /opt/ros/jazzy/setup.bash
+export GZ_SIM_RESOURCE_PATH=/opt/ros/jazzy/share/nav2_minimal_tb3_sim/models:/opt/ros/jazzy/share
+ros2 launch nav2_minimal_tb3_sim spawn_tb3.launch.py
 ```
 
-Then launch RViz in the RDP session:
+Confirm bridge topics:
 
 ```bash
-rviz2
+ros2 topic list | grep -E '^/(clock|cmd_vel|imu|joint_states|odom|scan|tf)$'
 ```
 
-Use RViz to confirm:
+Drive the simulated robot:
+
+```bash
+ros2 topic echo --once /odom
+ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.2}, angular: {z: 0.4}}"
+sleep 3
+ros2 topic echo --once /odom
+```
+
+If odometry changes after the command, the Gazebo bridge path is healthy.
+
+Gazebo may warn that its internal transport selected `127.0.0.1` because it could not find a preferred IP. That did not block local in-container simulation during verification, but do not treat Gazebo transport itself as the remote robot networking path until that warning is resolved.
+
+## Full Nav2 Test Path
+
+Only after the minimal bridge works, install full navigation packages:
+
+```bash
+sudo apt-get install -y \
+  ros-jazzy-navigation2 \
+  ros-jazzy-nav2-bringup \
+  ros-jazzy-slam-toolbox \
+  ros-jazzy-turtlebot3-gazebo \
+  ros-jazzy-turtlebot3-navigation2
+```
+
+Then use RDP and RViz to confirm:
 
 - `/map`, `/tf`, `/odom`, `/scan`, and `/cmd_vel` exist.
 - The robot model appears.
@@ -120,4 +144,3 @@ Use RViz to confirm:
 ## When To Bake It Into The Image
 
 Only add these packages to the Dockerfile after the optional install path is proven on your Mac. Baking them in will make the base image larger and rebuilds slower, so keep the default image focused on ROS desktop, RDP, rosbridge, Zenoh, and transport tooling until navigation simulation is a confirmed workflow.
-

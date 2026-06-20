@@ -353,7 +353,115 @@ theta: 0.8064000010490417
 
 Visual proof was captured locally at `/private/tmp/ros2-turtlesim-smoke.png`.
 
+## Minimal TurtleBot Gazebo Bridge Verification
+
+The lightest TurtleBot/Gazebo path was tested live in the running container before adding any simulator packages to the image.
+
+The package was installed only in the current container:
+
+```bash
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y ros-jazzy-nav2-minimal-tb3-sim
+```
+
+Installed versions:
+
+```text
+ros-jazzy-nav2-minimal-tb3-sim 1.0.1-1noble.20260614.084159
+ros-jazzy-ros-gz-bridge         1.0.22-1noble.20260612.145221
+ros-jazzy-ros-gz-sim            1.0.22-1noble.20260614.054729
+```
+
+The install pulled `164` packages, downloaded `131 MB`, and used about `555 MB` of additional disk in the live container.
+
+This package is not a full Nav2 bringup. In this Jazzy package version it provides:
+
+```text
+/opt/ros/jazzy/share/nav2_minimal_tb3_sim/launch/spawn_tb3.launch.py
+/opt/ros/jazzy/share/nav2_minimal_tb3_sim/configs/turtlebot3_waffle_bridge.yaml
+/opt/ros/jazzy/share/nav2_minimal_tb3_sim/worlds/tb3_sandbox.sdf.xacro
+```
+
+It starts the Gazebo bridge and spawns the robot, but the Gazebo server must be started separately.
+
+A headless world expanded cleanly:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+xacro /opt/ros/jazzy/share/nav2_minimal_tb3_sim/worlds/tb3_sandbox.sdf.xacro headless:=true > /tmp/tb3_sandbox_headless.sdf
+```
+
+Gazebo server-only mode started with:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+export GZ_SIM_RESOURCE_PATH=/opt/ros/jazzy/share/nav2_minimal_tb3_sim/models:/opt/ros/jazzy/share
+ros2 launch ros_gz_sim gz_sim.launch.py gz_args:="-r -s /tmp/tb3_sandbox_headless.sdf"
+```
+
+The TurtleBot bridge and spawn launch then started with:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+export GZ_SIM_RESOURCE_PATH=/opt/ros/jazzy/share/nav2_minimal_tb3_sim/models:/opt/ros/jazzy/share
+ros2 launch nav2_minimal_tb3_sim spawn_tb3.launch.py
+```
+
+The ROS graph exposed the expected bridge topics:
+
+```text
+/clock
+/cmd_vel
+/imu
+/joint_states
+/odom
+/scan
+/tf
+```
+
+The active bridge process reported:
+
+```text
+Creating GZ->ROS Bridge: [/clock]
+Creating GZ->ROS Bridge: [/joint_states]
+Creating GZ->ROS Bridge: [/odom]
+Creating GZ->ROS Bridge: [/tf]
+Creating GZ->ROS Bridge: [/imu]
+Creating GZ->ROS Bridge: [/scan]
+Creating ROS->GZ Bridge: [cmd_vel]
+```
+
+Publishing a velocity command changed simulated odometry. Pose before command:
+
+```text
+x: 2.2371907111851046e-07
+y: 3.3227224807908604e-16
+z: 0.0
+orientation.z: 1.4852209778317137e-09
+orientation.w: 1.0
+```
+
+Pose after command:
+
+```text
+x: 0.4989049568687094
+y: 0.5330766650723803
+z: 0.0
+orientation.z: 0.7301209934483827
+orientation.w: 0.6833178871696151
+```
+
+Gazebo emitted a local-discovery warning:
+
+```text
+Couldn't find a preferred IP via the getifaddrs() call; I'm assuming that your IP address is 127.0.0.1.
+```
+
+That warning did not block local in-container simulation, but it should be investigated before treating Gazebo transport as a remote robot networking path. ROS bridge and Zenoh remain the repo's verified network paths for external clients.
+
 ## Next Safe Step
+
+The next simulator step is to install full Nav2 bringup on top of the now-verified minimal Gazebo bridge, then verify lifecycle nodes, `/map`, planning, and RViz goal execution before baking Nav2 packages into the base image.
 
 The signed installer should still not be installed until local package signature validation succeeds. For now, use the source-built CLI path above, or complete Apple-documented source installation interactively with `sudo`, then rerun:
 

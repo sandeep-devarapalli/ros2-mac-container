@@ -13,7 +13,7 @@ The goal is a native-feeling Ubuntu ROS 2 desktop on an ARM64 Mac, with KDE/xrdp
 - Zenoh router from `rmw_zenoh_cpp` at `127.0.0.1:7447`.
 - A GitHub Pages wireless stream simulator for payload/compression/link tradeoffs.
 - Edge-device setup docs for Raspberry Pi, Jetson, or robot-side computers.
-- Simulation and navigation testing notes for turtlesim, Nav2, TurtleBot3, and Gazebo.
+- Simulation and navigation testing notes for turtlesim, the verified minimal TurtleBot/Gazebo bridge, and optional full Nav2 bringup.
 
 ## Requirements
 
@@ -104,7 +104,7 @@ source /opt/ros/jazzy/setup.bash
 ros2 run turtlesim turtlesim_node
 ```
 
-For navigation work, install Nav2/TurtleBot3/Gazebo only after the base runtime is healthy. The optional path is documented in `docs/simulation_navigation.md`.
+For navigation work, install simulator packages only after the base runtime is healthy. The minimal TurtleBot/Gazebo bridge has been verified in the live container; full Nav2 bringup should be proven next before adding it to the base image. The optional path is documented in `docs/simulation_navigation.md`.
 
 ## ROS Networking
 
