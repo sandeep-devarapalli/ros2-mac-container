@@ -182,12 +182,14 @@ Current verification status:
 - A direct `/cmd_vel` command moved the loopback pose from `x=-2.000` to `x=-1.400`.
 - A `NavigateToPose` goal from about `(-1.400, -0.500)` to `(2.0, 0.0)` finished with `error_code: 0` and `Goal finished with status: SUCCEEDED`; final sampled TF was about `(2.039, -0.108)`.
 
-Use RDP and RViz to confirm the same workflow visually:
+RDP/RViz visual proof has also been captured:
+
+![Nav2 loopback RViz proof](assets/nav2-rviz-loopback-proof-2026-06-20.png)
 
 - `/map`, `/tf`, `/odom`, `/scan`, and `/cmd_vel` exist.
 - The robot model appears.
 - Nav2 lifecycle nodes become active.
-- A 2D goal in RViz produces a planned path and velocity commands.
+- The Nav2 panel shows `Navigation: active`, `Feedback: reached`, `Distance remaining: 0.07 m`, `Time taken: 12 s`, and `Recoveries: 0`.
 
 ## When To Bake It Into The Image
 

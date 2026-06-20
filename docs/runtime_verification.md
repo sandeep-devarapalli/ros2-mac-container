@@ -609,9 +609,37 @@ yaw 12.919 degrees
 
 Treat this as a full headless Nav2 loopback proof: package install, lifecycle activation, initial pose, laser scan, goal acceptance, planning, controller output, final command path, loopback motion, and action success are verified.
 
+## RDP/RViz Visual Proof
+
+The same `/initialpose` plus `NavigateToPose` workflow was run with RViz visible over the RDP desktop:
+
+![Nav2 loopback RViz proof](assets/nav2-rviz-loopback-proof-2026-06-20.png)
+
+The RViz Navigation 2 panel showed:
+
+```text
+Navigation: active
+Feedback: reached
+ETA: 0 s
+Distance remaining: 0.07 m
+Time taken: 12 s
+Recoveries: 0
+```
+
+The terminal side of the same run returned:
+
+```text
+Result:
+    error_code: 0
+error_msg: ''
+Goal finished with status: SUCCEEDED
+map -> base_link translation [2.039, -0.061, 0.010]
+yaw 11.905 degrees
+```
+
 ## Next Safe Step
 
-The next simulator step is RViz visual proof of the same Nav2 loopback goal over RDP, followed by deciding whether to keep Nav2 as an optional install or bake the package set into the image.
+The next simulator step is deciding whether Nav2 stays as an optional live-container install or gets baked into the image. Keep it optional if the base image should stay focused on ROS desktop, RDP, rosbridge, Zenoh, and transport tooling; bake it in if repeatable navigation simulation matters more than image size and rebuild time.
 
 The signed installer should still not be installed until local package signature validation succeeds. For now, use the source-built CLI path above, or complete Apple-documented source installation interactively with `sudo`, then rerun:
 
